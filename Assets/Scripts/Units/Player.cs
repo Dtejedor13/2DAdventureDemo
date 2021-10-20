@@ -51,55 +51,49 @@ public class Player : CharacterBase, IUnit
     // Update is called once per frame
     void Update()
     {
-        bool wasFlyng = animator.GetBool("IsInAir");
-        animator.SetBool("IsInAir", !isGrounded);
+        if (animator.GetBool("IsTakingDamage")) return;
 
+        bool IsJumping;
+        bool IsLanding;
+        bool IsRunning;
+        bool IsCrouching;
+        int IsAttacking = 0;
+
+        bool wasFlyng = animator.GetBool("IsInAir");
         if (wasFlyng && isGrounded)
-        {
-            animator.SetBool("IsJumping", false);
-            animator.SetBool("IsLanding", true);
-        }
+            IsLanding = true;
 
         if (Input.GetKey(KeyCode.D) && !attackAnimationIsRunning)
         {
             Move(MovmentSpeed, 0, animator.GetBool("IsCrouching"));
             renderer.flipX = false;
-            animator.SetBool("IsRunning", true);
+            IsRunning = true;
         }
         if (Input.GetKey(KeyCode.A) && !attackAnimationIsRunning)
         {
             Move(MovmentSpeed * -1, 0, animator.GetBool("IsCrouching"));
-            animator.SetBool("IsRunning", true);
+            IsRunning = true;
             renderer.flipX = true;
         }
         if (Input.GetKeyDown(KeyCode.Space) && isGrounded && !attackAnimationIsRunning)
-        {
-            Jump();
-            animator.SetBool("IsJumping", true);
-            animator.SetBool("IsLanding", false);
-        }
+            IsJumping = true;
+
         if (Input.GetKey(KeyCode.S) && isGrounded && !attackAnimationIsRunning)
-        {
-            animator.SetBool("IsCrouching", true);
-        }
+            IsCrouching = true;
+
         if ((Input.GetKeyDown(KeyCode.E) || Input.GetKey(KeyCode.Q)) && isGrounded)
         {
             bool attack2 = Input.GetKey(KeyCode.Q);
             if (!attackAnimationIsRunning)
             {
-                animator.SetBool((attack2 ? "IsAttacking2" : "IsAttacking"), true);
+                IsAttacking = (attack2 ? 2 : 1);
                 attackAnimationIsRunning = true;
                 attackCanDealDamage = true;
                 attackPower = Attack * (attack2 ? 6 : 3);
             }
         }
 
-        // cancel Animations
-        if (!Input.GetKey(KeyCode.A) && !Input.GetKey(KeyCode.D))
-            animator.SetBool("IsRunning", false);
-        if (!Input.GetKey(KeyCode.S))
-            animator.SetBool("IsCrouching", false);
-
+        AnimationHandler(IsRunning, false, false, IsCrouching, IsLanding, IsAttacking);
     }
 
     private void FixedUpdate()
@@ -163,5 +157,17 @@ public class Player : CharacterBase, IUnit
     {
         enemyHitColider.GetComponent<IUnit>().TakeDamage(attackPower);
         attackCanDealDamage = false;
+    }
+
+    private void AnimationHandler(bool IsRunning, bool IsTakingDamage,
+    bool IsDeath, bool IsCrouching, bool IsLanding, int IsAttacking = 0)
+    {
+        animator.SetBool("IsAttacking", IsAttacking == 1);
+        animator.SetBool("IsAttacking2", IsAttacking == 2);
+        animator.SetBool("IsTakingDamage", IsTakingDamage);
+        animator.SetBool("IsDeath", IsDeath);
+        animator.SetBool("IsCrouching", IsCrouching);
+        animator.SetBool("IsLanding", IsLanding);
+        animator.SetBool("IsInAir", !isGrounded);
     }
 }

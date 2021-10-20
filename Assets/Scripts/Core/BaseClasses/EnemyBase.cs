@@ -64,22 +64,24 @@ namespace Assets.Scripts.Core.BaseClasses
 
         public void OnDamageAnimationEnd()
         {
-            animator.SetBool("IsGettingDamage", false);
+            AnimationHandler(false, false, false, false, false);
         }
         #endregion
 
         public void TakeDamage(int attackValue)
         {
-            animator.SetBool("IsRunning", false);
-            animator.SetBool("IsAttacking", false);
-            animator.SetBool("IsGettingDamage", true);
+            bool IsDeath;
             int damage = attackValue - Defense;
             print($"Damage done {damage}, Hp bevor damage {currentHP}");
+
             if (damage <= 0) damage = 1;
             currentHP -= damage;
-            if (currentHP <= 0) animator.SetBool("IsDeath", true);
+
+            IsDeath = currentHP <= 0;
+
             print($"Hp after damage calc {currentHP}");
 
+            AnimationHandler(false, false, IsDeath, false, true);
             Hpbar.GetComponent<FloatingHpBar>().ApplyDamage(currentHP);
         }
 

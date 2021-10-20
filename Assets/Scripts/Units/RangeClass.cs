@@ -10,6 +10,9 @@ namespace Assets.Scripts.Core
     {
         void FixedUpdate()
         {
+            bool IsRunning;
+            bool IsAttacking;
+
             if (animator.GetBool("IsDeath"))
             {
                 Hpbar.GetComponent<FloatingHpBar>().ApplyDamage(0);
@@ -24,8 +27,7 @@ namespace Assets.Scripts.Core
 
                 if (CheckTargetInAttackRange() && !attackAnimationIsRunning) // Unit is in range, unit start attacking
                 {
-                    animator.SetBool("IsRunning", false);
-                    animator.SetBool("IsAttacking", true);
+                    IsAttacking = true;
                     targetAggro = true;
                     attackAnimationIsRunning = true;
                     attackCanDealDamage = true;
@@ -40,17 +42,18 @@ namespace Assets.Scripts.Core
                 {
                     attackAnimationIsRunning = false;
                     attackCanDealDamage = false;
-                    animator.SetBool("IsAttacking", false);
                 }
 
                 if (((CheckTargetInAttackRange() || targetAggro) && !attackAnimationIsRunning)) // unit is out of range, unit move to target
                 {
                     if (!TargetAggro) TargetAggro = true;
                     // start running
-                    animator.SetBool("IsRunning", true);
+                    IsRunning = true;
                     Move();
                 }
             }
+
+            AnimationHandler(IsRunning, IsAttacking, false, false, false);
         }
 
         private bool CheckTargetInAttackRange()
