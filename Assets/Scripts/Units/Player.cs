@@ -1,33 +1,35 @@
 using Assets.Scripts.Core.eventArgs;
+using Assets.Scripts.Core.BaseClasses;
 using Assets.Scripts.Core.Interfaces;
 using System;
 using UnityEngine;
 
-public class Player : MonoBehaviour, IUnit
+public class Player : CharacterBase, IUnit
 {
-    public Animator animator;
-    public SpriteRenderer renderer;
-    public int HP { get; set; }
-
-    private int baseAttack = 4;
-    private int attack;
-    private int defense = 2;
-
-    private BoxCollider2D enemyHitColider;
-    public RectTransform Hpbar;
-    bool isGrounded;
-    float movmentSpeed = .5f;
-    float jumpPower = 3f;
-    bool attackAnimationIsRunning;
-    bool attackCanDealDamage;
-
     public event EventHandler<RangeAttackEventArgs> RangeAttackEvent;
+
+    public Animator animator;
+    public RectTransform Hpbar;
+    public SpriteRenderer renderer;
+
+    public int MaxHP;
+    public float MovmentSpeed = .5f;
+    public float JumpPower = 3f;
+    public int Attack;
+    public int defense;
+
+    private int currentHP;
+    private int attackPower;
+    private BoxCollider2D enemyHitColider;
+    private bool isGrounded;
+    private bool attackAnimationIsRunning;
+    private bool attackCanDealDamage;
 
     private void Start()
     {
-        HP = 100;
-        Hpbar.GetComponent<FloatingHpBar>().HP = HP;
-        Hpbar.GetComponent<FloatingHpBar>().MaxHP = HP;
+        currentHP = MaxHP;
+        Hpbar.GetComponent<FloatingHpBar>().HP = currentHP;
+        Hpbar.GetComponent<FloatingHpBar>().MaxHP = currentHP;
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
@@ -60,13 +62,13 @@ public class Player : MonoBehaviour, IUnit
 
         if (Input.GetKey(KeyCode.D) && !attackAnimationIsRunning)
         {
-            Move(movmentSpeed, 0, animator.GetBool("IsCrouching"));
+            Move(MovmentSpeed, 0, animator.GetBool("IsCrouching"));
             renderer.flipX = false;
             animator.SetBool("IsRunning", true);
         }
         if (Input.GetKey(KeyCode.A) && !attackAnimationIsRunning)
         {
-            Move(movmentSpeed * -1, 0, animator.GetBool("IsCrouching"));
+            Move(MovmentSpeed * -1, 0, animator.GetBool("IsCrouching"));
             animator.SetBool("IsRunning", true);
             renderer.flipX = true;
         }
@@ -85,10 +87,10 @@ public class Player : MonoBehaviour, IUnit
             bool attack2 = Input.GetKey(KeyCode.Q);
             if (!attackAnimationIsRunning)
             {
-                animator.SetBool((attack2? "IsAttacking2" : "IsAttacking"), true);
+                animator.SetBool((attack2 ? "IsAttacking2" : "IsAttacking"), true);
                 attackAnimationIsRunning = true;
                 attackCanDealDamage = true;
-                attack = baseAttack * (attack2 ? 6 : 3);
+                attackPower = Attack * (attack2 ? 6 : 3);
             }
         }
 
@@ -107,22 +109,23 @@ public class Player : MonoBehaviour, IUnit
             System.Random random = new System.Random();
             if (random.Next(1, 101) + 20 >= 100)
             {
-                attack = (int)Math.Round(attack * 1.5, 0);
+                attackPower = (int)Math.Round(attackPower * 1.5, 0);
                 //Debug.Log("Crittical Hit!");
             }
-            enemyHitColider.GetComponent<IUnit>().TakeDamage(attack);
-            attackCanDealDamage = false;
+            ApplyDamage(attackPower);
         }
     }
 
     private void Move(float x, float y, bool slide)
     {
-        transform.position += new Vector3(x, y, 0) * (0.025f * (slide ? 1 : 2));
+        // transform.position += new Vector3(x, y, 0) * (0.025f * (slide ? 1 : 2));
+        // transform.position = BaseFunctions.MoveCharacter(x, y, 0, JumpPower, MovmentSpeed, (slide ? 2 : 1));
+        transform.position += MoveCharacter(x, y, JumpPower, MovmentSpeed, (slide ? 2 : 1));
     }
 
     private void Jump()
     {
-        transform.Translate(Vector3.up * jumpPower * 1.2f, Space.World);
+        transform.Translate(Vector3.up * JumpPower * 1.2f, Space.World);
     }
 
     public void TakeDamage(int attackValue)
@@ -130,11 +133,11 @@ public class Player : MonoBehaviour, IUnit
         animator.SetBool("IsTakingDamage", true);
         int damage = attackValue - defense;
         if (damage <= 0) damage = 1;
-        HP -= damage;
-        if (HP <= 0) HP = 0;
+        currentHP -= damage;
+        if (currentHP <= 0) currentHP = 0;
         // Set Value to Hp bar
-        Hpbar.GetComponent<FloatingHpBar>().ApplyDamage(HP);
-        if (HP == 0) 
+        Hpbar.GetComponent<FloatingHpBar>().ApplyDamage(currentHP);
+        if (currentHP == 0)
             animator.SetBool("IsDeath", true);
     }
 
@@ -158,6 +161,7 @@ public class Player : MonoBehaviour, IUnit
 
     public void ApplyDamage()
     {
-        throw new NotImplementedException();
+        enemyHitColider.GetComponent<IUnit>().TakeDamage(attackPower);
+        attackCanDealDamage = false;
     }
 }

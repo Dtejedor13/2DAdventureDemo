@@ -2,46 +2,48 @@
 
 namespace Assets.Scripts.Core.BaseClasses
 {
-    public abstract class EnemyBase : MonoBehaviour
+    public abstract class EnemyBase : CharacterBase
     {
+        public event EventHandler<RangeAttackEventArgs> RangeAttackEvent;
+
         public Animator animator;
         public RectTransform Hpbar;
         public SpriteRenderer Srenderer;
 
-        public int HP { get; set; }
         public int MaxHP;
         public int Attack;
         public int Defense;
         public int MoveSpeed;
-        public int TargetRange;
+        public int AggroRange;
         public int AttackRange;
-        public bool IsFacingToLeft = false;
+        public bool IsFacingToLeft;
 
+        private int currentHP;
         private Transform target;
-        private BoxCollider2D PlayerHitBox;
-        private bool targetAggro;
+        private BoxCollider2D playerHitBox;
+        [System.NonSerialized] public bool TargetAggro;
         private bool attackAnimationIsRunning;
         private bool attackCanDealDamage;
 
-        public void OnStart()
+        void Update()
         {
-            HP = MaxHP;
-            Hpbar.GetComponent<FloatingHpBar>().HP = HP;
+            currentHP = MaxHP;
+            Hpbar.GetComponent<FloatingHpBar>().HP = currentHP;
             Hpbar.GetComponent<FloatingHpBar>().MaxHP = MaxHP;
             SearchForTarget();
         }
 
         #region Events
-        public void ColissionEnter2D(Collision2D collision)
+        void OnCollisionEnter2D(Collision2D collision)
         {
             if (collision.collider.tag == "Player")
-                PlayerHitBox = collision.collider as BoxCollider2D;
+                playerHitBox = collision.collider as BoxCollider2D;
         }
 
-        public void ColissionExit2D(Collision2D collision)
+        void OnCollisionExit2D(Collision2D collision)
         {
             if (collision.collider.tag == "Player")
-                PlayerHitBox = null;
+                playerHitBox = null;
         }
         #endregion
 
@@ -69,17 +71,19 @@ namespace Assets.Scripts.Core.BaseClasses
             animator.SetBool("IsAttacking", false);
             animator.SetBool("IsGettingDamage", true);
             int damage = attackValue - Defense;
+            print($"Damage done {damage}, Hp bevor damage {currentHP}");
             if (damage <= 0) damage = 1;
-            HP -= damage;
-            if (HP <= 0) animator.SetBool("IsDeath", true);
+            currentHP -= damage;
+            if (currentHP <= 0) animator.SetBool("IsDeath", true);
+            print($"Hp after damage calc {currentHP}");
 
-            Hpbar.GetComponent<FloatingHpBar>().ApplyDamage(HP);
+            Hpbar.GetComponent<FloatingHpBar>().ApplyDamage(currentHP);
         }
 
         public void ApplyDamage()
         {
             attackCanDealDamage = false;
-            PlayerHitBox.GetComponent<Player>().TakeDamage(Attack);
+            playerHitBox.GetComponent<Player>().TakeDamage(Attack);
         }
 
         public void SearchForTarget()
@@ -89,31 +93,32 @@ namespace Assets.Scripts.Core.BaseClasses
 
         public void CheckPositionAndFlipUnit()
         {
-            if ((IsFacingToLeft && !TargetIsOnTheLeftSide()) ||
-                        (!IsFacingToLeft && TargetIsOnTheLeftSide()))
+            if ((IsFacingToLeft && !TargetIsOnTheLeftSide()) || (!IsFacingToLeft && TargetIsOnTheLeftSide()))
             {
                 transform.Rotate(0, 180f, 0);
-
                 IsFacingToLeft = !IsFacingToLeft;
             }
         }
 
         public void Move()
         {
-            transform.position += new Vector3((IsFacingToLeft ? MoveSpeed * -1 : MoveSpeed), 0, 0) * (0.025f * 1);
+            // transform.position += new Vector3((IsFacingToLeft ? MoveSpeed * -1 : MoveSpeed), 0, 0) * (0.025f * 1);
+            // transform.position += BaseFunctions.MoveCharacter(IsFacingToLeft ? MoveSpeed * -1 : MoveSpeed, 0, 1);
+            transform.position += MoveCharacter(IsFacingToLeft ? MoveSpeed + -1 : MoveSpeed, 0, 1);
         }
 
         public bool TargetIsOnTheLeftSide()
         {
-            return transform.position.x > GetTarget.position.x;
+            return transform.position.x > target.position.x;
         }
 
-        #region Getters
-        public Transform GetTarget { get => target; }
-        public BoxCollider2D GetPlayerHitBox { get => PlayerHitBox; }
-        public bool GetTargetAggro { get => targetAggro; set => targetAggro = value; }
-        public bool GetAttackAnimationIsRunning { get => attackAnimationIsRunning; set => attackAnimationIsRunning = value; }
-        public bool GetAttackCanDealDamage { get => attackCanDealDamage; set => attackCanDealDamage = value; }
-        #endregion
+        private float GetDistance()
+        {
+            switch (IsFacingToLeft)
+            {
+                case true: return transform.position.x - target.position.x;
+                default: return target.position.x - transform.position.x;
+            }
+        }
     }
 }
