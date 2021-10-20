@@ -6,21 +6,24 @@ namespace Assets.Scripts.Core.BaseClasses
     {
         public event EventHandler<RangeAttackEventArgs> RangeAttackEvent;
 
+        // Editor
         public Animator animator;
         public RectTransform Hpbar;
         public SpriteRenderer Srenderer;
+        public bool IsFacingToLeft;
 
+        // Stats
         public int MaxHP;
         public int Attack;
         public int Defense;
         public int MoveSpeed;
         public int AggroRange;
         public int AttackRange;
-        public bool IsFacingToLeft;
 
         private int currentHP;
         private Transform target;
         private BoxCollider2D playerHitBox;
+        private bool IsGrounded;
         [System.NonSerialized] public bool TargetAggro;
         private bool attackAnimationIsRunning;
         private bool attackCanDealDamage;
@@ -119,6 +122,16 @@ namespace Assets.Scripts.Core.BaseClasses
                 case true: return transform.position.x - target.position.x;
                 default: return target.position.x - transform.position.x;
             }
+        }
+
+        private void AnimationHandler(bool _IsRunning,
+        bool _IsAttacking, bool _IsDeath, bool _isJumping, bool _IsGettingDamage)
+        {
+            animator.SetBool("IsRunning", _IsRunning);
+            animator.SetBool("IsJumping", _isJumping);
+            animator.SetBool("IsAttacking", _IsAttacking);
+            animator.SetBool("IsDeath", _IsDeath);
+            animator.SetBool("IsGettingDamage", _IsGettingDamage);
         }
     }
 }

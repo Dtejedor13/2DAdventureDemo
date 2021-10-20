@@ -8,6 +8,9 @@ public class MeleeClass : EnemyBase, IUnit
 {
     private void FixedUpdate()
     {
+        bool IsRunning;
+        bool IsAttacking;
+
         if (animator.GetBool("IsGettingDamage")) return;
 
         if (animator.GetBool("IsDeath"))
@@ -24,8 +27,7 @@ public class MeleeClass : EnemyBase, IUnit
 
             if (playerHitBox != null && !attackAnimationIsRunning) // Unit is in attackrange
             {
-                animator.SetBool("IsRunning", false);
-                animator.SetBool("IsAttacking", true);
+                IsAttacking = true;
                 attackAnimationIsRunning = true;
                 attackCanDealDamage = true;
             }
@@ -36,12 +38,14 @@ public class MeleeClass : EnemyBase, IUnit
                     if (!TargetAggro) TargetAggro = true;
                     Move();
                     // Move animation
-                    animator.SetBool("IsRunning", true);
+                    IsRunning = true;
                 }
                 // else
                 //     animator.SetBool("IsRunning", false);
             }
         }
+
+        Animationhandler(IsRunning, IsAttacking, false, false, false);
 
         if (attackAnimationIsRunning && playerHitBox != null && attackCanDealDamage)
             ApplyDamage();
