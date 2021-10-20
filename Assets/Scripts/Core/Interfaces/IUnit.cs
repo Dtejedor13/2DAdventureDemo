@@ -8,5 +8,8 @@ namespace Assets.Scripts.Core.Interfaces
         event EventHandler<RangeAttackEventArgs> RangeAttackEvent;
         void TakeDamage(int attackValue);
         void ApplyDamage();
+        void ApplyHealing(int healingValue);
+        void ApplyAttackBoost(int attackValue);
+        void ApplyDefenseBoost(int defenseValue);
     }
 }

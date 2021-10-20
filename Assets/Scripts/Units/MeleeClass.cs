@@ -2,14 +2,15 @@ using Assets.Scripts.Core.BaseClasses;
 using Assets.Scripts.Core.eventArgs;
 using Assets.Scripts.Core.Interfaces;
 using System;
-using UnityEngine;
 
 public class MeleeClass : EnemyBase, IUnit
 {
+    public event EventHandler<RangeAttackEventArgs> RangeAttackEvent;
+
     private void FixedUpdate()
     {
-        bool IsRunning;
-        bool IsAttacking;
+        bool IsRunning = false;
+        bool IsAttacking = false;
 
         if (animator.GetBool("IsGettingDamage")) return;
 
@@ -19,21 +20,21 @@ public class MeleeClass : EnemyBase, IUnit
             return;
         }
 
-        if (target == null)
+        if (Target == null)
             SearchForTarget();
         else
         {
             CheckPositionAndFlipUnit();
 
-            if (playerHitBox != null && !attackAnimationIsRunning) // Unit is in attackrange
+            if (PlayerHitBox != null && !AttackAnimationIsRunning) // Unit is in attackrange
             {
                 IsAttacking = true;
-                attackAnimationIsRunning = true;
-                attackCanDealDamage = true;
+                AttackAnimationIsRunning = true;
+                AttackCanDealDamage = true;
             }
             else
             {
-                if (!attackAnimationIsRunning && (getDistance() <= AggroRange || TargetAggro))
+                if (!AttackAnimationIsRunning && (GetDistance() <= AggroRange || TargetAggro))
                 {
                     if (!TargetAggro) TargetAggro = true;
                     Move();
@@ -45,9 +46,9 @@ public class MeleeClass : EnemyBase, IUnit
             }
         }
 
-        Animationhandler(IsRunning, IsAttacking, false, false, false);
+        AnimationHandler(IsRunning, IsAttacking, false, null, false);
 
-        if (attackAnimationIsRunning && playerHitBox != null && attackCanDealDamage)
+        if (AttackAnimationIsRunning && PlayerHitBox != null && AttackCanDealDamage)
             ApplyDamage();
     }
 }

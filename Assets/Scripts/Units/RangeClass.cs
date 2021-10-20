@@ -2,16 +2,17 @@
 using Assets.Scripts.Core.eventArgs;
 using Assets.Scripts.Core.Interfaces;
 using System;
-using UnityEngine;
 
 namespace Assets.Scripts.Core
 {
     public class RangeClass : EnemyBase, IUnit
     {
+        public event EventHandler<RangeAttackEventArgs> RangeAttackEvent;
+
         void FixedUpdate()
         {
-            bool IsRunning;
-            bool IsAttacking;
+            bool IsRunning = false;
+            bool IsAttacking = false;
 
             if (animator.GetBool("IsDeath"))
             {
@@ -19,18 +20,18 @@ namespace Assets.Scripts.Core
                 return;
             }
 
-            if (target == null)
+            if (Target == null)
                 SearchForTarget();
             else
             {
                 CheckPositionAndFlipUnit();
 
-                if (CheckTargetInAttackRange() && !attackAnimationIsRunning) // Unit is in range, unit start attacking
+                if (CheckTargetInAttackRange() && !AttackAnimationIsRunning) // Unit is in range, unit start attacking
                 {
                     IsAttacking = true;
-                    targetAggro = true;
-                    attackAnimationIsRunning = true;
-                    attackCanDealDamage = true;
+                    TargetAggro = true;
+                    AttackAnimationIsRunning = true;
+                    AttackCanDealDamage = true;
                     RangeAttackEventArgs args = new RangeAttackEventArgs
                     {
                         AttackValue = Attack,
@@ -38,13 +39,13 @@ namespace Assets.Scripts.Core
                     };
                     RangeAttackEvent?.Invoke(this, args);
                 }
-                else if (!CheckTargetInAttackRange() && attackAnimationIsRunning) // unit is attacking, but target is out of range => cancel attack
+                else if (!CheckTargetInAttackRange() && AttackAnimationIsRunning) // unit is attacking, but target is out of range => cancel attack
                 {
-                    attackAnimationIsRunning = false;
-                    attackCanDealDamage = false;
+                    AttackAnimationIsRunning = false;
+                    AttackCanDealDamage = false;
                 }
 
-                if (((CheckTargetInAttackRange() || targetAggro) && !attackAnimationIsRunning)) // unit is out of range, unit move to target
+                if (((CheckTargetInAttackRange() || TargetAggro) && !AttackAnimationIsRunning)) // unit is out of range, unit move to target
                 {
                     if (!TargetAggro) TargetAggro = true;
                     // start running
@@ -53,7 +54,7 @@ namespace Assets.Scripts.Core
                 }
             }
 
-            AnimationHandler(IsRunning, IsAttacking, false, false, false);
+            AnimationHandler(IsRunning, IsAttacking, false, null, null);
         }
 
         private bool CheckTargetInAttackRange()

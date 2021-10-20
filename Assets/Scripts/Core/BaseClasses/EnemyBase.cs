@@ -4,8 +4,6 @@ namespace Assets.Scripts.Core.BaseClasses
 {
     public abstract class EnemyBase : CharacterBase
     {
-        public event EventHandler<RangeAttackEventArgs> RangeAttackEvent;
-
         // Editor
         public Animator animator;
         public RectTransform Hpbar;
@@ -16,17 +14,17 @@ namespace Assets.Scripts.Core.BaseClasses
         public int MaxHP;
         public int Attack;
         public int Defense;
-        public int MoveSpeed;
+        public float MoveSpeed;
         public int AggroRange;
         public int AttackRange;
 
         private int currentHP;
-        private Transform target;
-        private BoxCollider2D playerHitBox;
-        private bool IsGrounded;
+        private bool isGrounded;
+        [System.NonSerialized] public Transform Target;
+        [System.NonSerialized] public BoxCollider2D PlayerHitBox;
         [System.NonSerialized] public bool TargetAggro;
-        private bool attackAnimationIsRunning;
-        private bool attackCanDealDamage;
+        [System.NonSerialized] public bool AttackAnimationIsRunning;
+        [System.NonSerialized] public bool AttackCanDealDamage;
 
         void Update()
         {
@@ -40,21 +38,21 @@ namespace Assets.Scripts.Core.BaseClasses
         void OnCollisionEnter2D(Collision2D collision)
         {
             if (collision.collider.tag == "Player")
-                playerHitBox = collision.collider as BoxCollider2D;
+                PlayerHitBox = collision.collider as BoxCollider2D;
         }
 
         void OnCollisionExit2D(Collision2D collision)
         {
             if (collision.collider.tag == "Player")
-                playerHitBox = null;
+                PlayerHitBox = null;
         }
         #endregion
 
         #region Animation Triggers
         public void OnAttackAnimationEnd()
         {
-            attackAnimationIsRunning = false;
-            attackCanDealDamage = false;
+            AttackAnimationIsRunning = false;
+            AttackCanDealDamage = false;
         }
 
         public void OnDeathAnimationEnd()
@@ -87,13 +85,30 @@ namespace Assets.Scripts.Core.BaseClasses
 
         public void ApplyDamage()
         {
-            attackCanDealDamage = false;
-            playerHitBox.GetComponent<Player>().TakeDamage(Attack);
+            AttackCanDealDamage = false;
+            PlayerHitBox.GetComponent<Player>().TakeDamage(Attack);
+        }
+
+        public void ApplyHealing(int healingValue)
+        {
+            currentHP += healingValue;
+            if (currentHP > MaxHP * 2) currentHP = MaxHP * 2;
+            Hpbar.GetComponent<FloatingHpBar>().ApplyDamage(currentHP);
+        }
+
+        public void ApplyAttackBoost(int attackValue)
+        {
+            Attack += attackValue;
+        }
+
+        public void ApplyDefenseBoost(int defenseValue)
+        {
+            Defense += defenseValue;
         }
 
         public void SearchForTarget()
         {
-            target = GameObject.Find("Player")?.GetComponent<Transform>();
+            Target = GameObject.Find("Player")?.GetComponent<Transform>();
         }
 
         public void CheckPositionAndFlipUnit()
@@ -109,31 +124,33 @@ namespace Assets.Scripts.Core.BaseClasses
         {
             // transform.position += new Vector3((IsFacingToLeft ? MoveSpeed * -1 : MoveSpeed), 0, 0) * (0.025f * 1);
             // transform.position += BaseFunctions.MoveCharacter(IsFacingToLeft ? MoveSpeed * -1 : MoveSpeed, 0, 1);
-            transform.position += MoveCharacter(IsFacingToLeft ? MoveSpeed + -1 : MoveSpeed, 0, 1);
+            transform.position += MoveCharacter((IsFacingToLeft ? MoveSpeed * -1 : MoveSpeed), 0);
         }
 
         public bool TargetIsOnTheLeftSide()
         {
-            return transform.position.x > target.position.x;
+            return transform.position.x > Target.position.x;
         }
 
-        private float GetDistance()
+        public float GetDistance()
         {
             switch (IsFacingToLeft)
             {
-                case true: return transform.position.x - target.position.x;
-                default: return target.position.x - transform.position.x;
+                case true: return transform.position.x - Target.position.x;
+                default: return Target.position.x - transform.position.x;
             }
         }
 
-        private void AnimationHandler(bool _IsRunning,
-        bool _IsAttacking, bool _IsDeath, bool _isJumping, bool _IsGettingDamage)
+        public void AnimationHandler(bool _IsRunning,
+        bool _IsAttacking, bool _IsDeath, bool? _isJumping, bool? _IsGettingDamage)
         {
             animator.SetBool("IsRunning", _IsRunning);
-            animator.SetBool("IsJumping", _isJumping);
             animator.SetBool("IsAttacking", _IsAttacking);
             animator.SetBool("IsDeath", _IsDeath);
-            animator.SetBool("IsGettingDamage", _IsGettingDamage);
+            if(_isJumping != null)
+                animator.SetBool("IsJumping", (bool)_isJumping);
+            if(_IsGettingDamage != null)
+                animator.SetBool("IsGettingDamage", (bool)_IsGettingDamage);
         }
     }
 }
